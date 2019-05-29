@@ -28,7 +28,7 @@
      "matches": ["https://www.youtube.com/*"],
      "run_at": "document_idle",
      "css": ["style.css"],
-     "js": ["contentScript.js"]
+     "js": ["jquery.js", "contentScript.js"]
    }
  ],
   "manifest_version": 2
