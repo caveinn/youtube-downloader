@@ -1,3 +1,6 @@
+"""
+/ POST -> youtube url
+"""
 import json
 from flask import Flask, Response, request
 from flask_cors import CORS
@@ -5,7 +8,6 @@ import youtube_dl
 
 app = Flask(__name__)
 CORS(app)
-
 
 class Logger:
     def debug(self, msg):
@@ -23,6 +25,7 @@ def hook(d):
 
 @app.route('/options', methods=['POST'])
 def options():
+    pass
 
 @app.route('/', methods=['POST', 'GET'])
 def test():
@@ -30,15 +33,13 @@ def test():
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
+            'preferredcodec': 'mp4',
         }],
         'logger': Logger(),
         'progress_hook': [hook],
     }
 
     url = json.loads(request.data)
-
     with youtube_dl.YoutubeDL(options) as ydl:
         ydl.download([url['link']])
 
