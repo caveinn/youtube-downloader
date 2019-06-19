@@ -11,41 +11,65 @@ CORS(app)
 
 class Logger:
     def debug(self, msg):
-        print('[Debug]: %s', msg)
+        print('[Debug]: %s' % msg)
 
     def warning(self, msg):
-        print('[Warning]: %s', msg)
+        print('[Warning]: %s' % msg)
 
     def error(self, msg):
-        print('[Error]: %s', msg)
+        print('[Error]: %s' % msg)
 
 def hook(d):
     if d['status'] == 'finished':
         print('Done downloading....')
 
-@app.route('/options', methods=['POST'])
+@app.route('/options/', methods=['GET'])
 def options():
-    pass
+    url = request.args.get('url')
+    print('[URL]: %s ' % url)
+    options = { 
+        'logger': Logger(),
+        'progress_hook': [hook]
+     }
+    available_options = []
+    with youtube_dl.YoutubeDL(options) as ydl:
+        info = ydl.extract_info(url, download=False)
+        formats = info.get('formats')
+        title = info.get('title')
+        for single_format in formats:
+            current_format = {
+                'link': url,
+                'title': title,
+                'extension': single_format.get('ext'),
+                'format_id': single_format.get('format_id'),
+                'quality': single_format.get('format_note'),
+                'format': 'audio' if 'audio' in single_format.get('format') else 'video'
+            }
 
-@app.route('/', methods=['POST', 'GET'])
-def test():
+            available_options.append(current_format)
+    
+    return Response(
+        mimetype='application/json',
+        response=json.dumps(available_options),
+        headers={'Access-Control-Allow-Origin': '*'}
+    )
+
+@app.route('/download', methods=['POST'])
+def download():
+    print(request.data)
+    info = json.loads(request.data)
     options = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp4',
-        }],
+        'format': info.get('format_id'),
         'logger': Logger(),
         'progress_hook': [hook],
+        'outtmpl': info["title"] + ".{}".format(info["extension"])
     }
-
-    url = json.loads(request.data)
     with youtube_dl.YoutubeDL(options) as ydl:
-        ydl.download([url['link']])
+        ydl.download([info['link']])
 
     return Response(
         status=200,
         mimetype='application/json',
-        response=json.dumps({'hi': 'there'}), 
-        headers={'Access-Control-Allow-Origin': '*'},
+        response=json.dumps({'message':'download_successful'}), 
+        headers={'Access-Control-Allow-Origin': '*'}
     )
